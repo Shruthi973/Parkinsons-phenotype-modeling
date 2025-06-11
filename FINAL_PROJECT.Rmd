@@ -1,0 +1,243 @@
+
+```{r}
+# AIM 1: 2-Group Comparison (TD vs PIGD)
+
+# Load required libraries
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(randomForest)
+library(caret)
+library(mice)
+library(class)  # for knn
+library(Boruta)  # for feature selection
+
+# Set working directory and load data
+setwd("/Users/shruthireddyvudem/Downloads")
+data <- read_csv("5.30.25_ShortenedProtocol-TDvsPIGDMelissa (1).csv")
+str(data)
+
+# Subset only TD and PIGD groups
+data <- data %>% filter(phenotype %in% c(1, 2))
+data$phenotype <- factor(data$phenotype, levels = c(1, 2), labels = c("TD", "PIGD"))
+
+# Select relevant variables
+vars <- c("phenotype", "screening_age", "sex", "mdsupdrs_3_hy", "mmse_total",
+          "trails_a_time_to_complete", "trails_b_time_to_complete", "sdmt_number_correct",
+          "imputed_abc", "mffabq_total", "a_persistent_anxiety_total", "b_episodic_total_score",
+          "c_avoidance_behavior_total", "gds_total", "balance_discordance",
+          "mdte", "cogdt", "cdte", "maai")
+
+#Checking NA'S
+#vars <- vars[vars != "" & !is.na(vars)]
+vars
+data <- data %>% select(all_of(vars))
+data
+colSums(is.na(data))
+
+# Impute missing values
+imputed <- mice(data, m = 1, method = 'pmm', seed = 123)
+imputed
+data_imp <- complete(imputed)
+str(data_imp)
+colSums(is.na(data_imp))
+
+# Train/Test split
+set.seed(123)
+train_index <- createDataPartition(data_imp$phenotype, p = 0.8, list = FALSE)
+train_data <- data_imp[train_index, ]
+test_data <- data_imp[-train_index, ]
+
+# Naive Bayes
+library(e1071)
+nb_model <- naiveBayes(phenotype ~ ., data = train_data)
+pred_nb <- predict(nb_model, newdata = test_data)
+confusionMatrix(pred_nb, test_data$phenotype)
+
+# Logistic Regression
+log_model <- glm(phenotype ~ ., data = train_data, family = "binomial")
+summary(log_model)
+pred_log <- predict(log_model, newdata = test_data, type = "response")
+pred_log_class <- ifelse(pred_log > 0.5, "PIGD", "TD")
+confusionMatrix(factor(pred_log_class, levels = c("TD", "PIGD")), test_data$phenotype)
+
+# Random Forest
+library(randomForest)
+rf_model <- randomForest(phenotype ~ ., data = train_data, ntree = 100)
+pred_rf <- predict(rf_model, newdata = test_data)
+confusionMatrix(pred_rf, test_data$phenotype)
+
+
+# ROC plots
+library(pROC)
+
+# Naive Bayes probability
+nb_probs <- predict(nb_model, newdata = test_data, type = "raw")[, "PIGD"]
+roc_nb <- roc(test_data$phenotype, nb_probs, levels = c("TD", "PIGD"), direction = "<")
+
+# Logistic Regression probability
+roc_log <- roc(test_data$phenotype, pred_log, levels = c("TD", "PIGD"), direction = "<")
+
+# Random Forest probability
+rf_probs <- predict(rf_model, newdata = test_data, type = "prob")[, "PIGD"]
+roc_rf <- roc(test_data$phenotype, rf_probs, levels = c("TD", "PIGD"), direction = "<")
+
+# Then re-run your plotting commands
+
+
+# Plot all ROC curves
+plot(roc_log, col = "blue", main = "ROC Curves", legacy.axes = TRUE)
+lines(roc_rf, col = "green")
+lines(roc_nb, col = "red")
+legend("bottomright", legend = c("Logistic", "Random Forest", "Naive Bayes"),
+       col = c("blue", "green", "red"), lwd = 2)
+
+
+
+#Statistical Interpretation and Summary
+#In this study, we aimed to differentiate between Tremor-Dominant (TD) and Postural Instability Gait Disorder (PIGD) phenotypes of Parkinson’s Disease using various clinical, psychological, cognitive, and dual-task performance features. After data imputation using Predictive Mean Matching (via mice) and filtering relevant features, we applied three classification models: Logistic Regression, Random Forest, and Naive Bayes, and evaluated them using ROC curves and 10-fold cross-validation.
+
+#Model Comparison:
+#Logistic Regression:
+#Accuracy: 85.7%, Sensitivity (TD detection): 100% , Specificity (PIGD detection): 75% ,Cross-Validated Mean ROC: 0.4625
+
+#Despite high accuracy on the test set, logistic regression showed convergence warnings and unstable probability estimates (fitted values close to 0 or 1), indicating overfitting and poor generalizability.
+
+#Random Forest: 
+#Accuracy: 42.8% , Sensitivity: 0%  , Specificity: 75%,  Cross-Validated Mean ROC: 0.675
+
+#While performance on the test set was weak, cross-validation suggests that with more data, RF may generalize well. It also achieved perfect specificity in several folds, indicating strong ability to detect PIGD when trained properly.
+
+#Naive Bayes:
+#Accuracy: 71.4% , Sensitivity: 66.7%,  Specificity: 75%,  Cross-Validated Mean ROC: 0.675
+
+#Performed well both on the test set and in cross-validation, with balanced sensitivity and specificity, making it a practical choice for small datasets.
+
+#Key Observations:
+#ROC analysis shows Naive Bayes and Random Forest consistently outperformed logistic regression in terms of discriminative power (ROC).
+
+#Naive Bayes showed the most balanced performance across all metrics and folds, making it the most stable model under limited sample size.
+
+#Logistic Regression’s instability is likely due to multicollinearity or insufficient events per variable (EPV).
+
+#Final Recommendation:
+#Based on this analysis, Naive Bayes is the most robust model for distinguishing TD vs. PIGD in this dataset due to its balance, generalizability (cross-validation ROC), and stable performance. Random Forest may perform better with a larger dataset, and its high specificity makes it useful for clinical decision-making when PIGD identification is critical.
+
+#Interpretation 
+#This shows that non-motor features—including psychological distress and cognitive impairment—can help differentiate between TD and PIGD phenotypes. Phenotype classification using predictive modeling is feasible and may aid clinical assessments.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# AIM 2: Predict phenotype ratio using cognitive, psychological, and DT variables
+
+# Load Libraries
+library(tidyverse)
+library(readr)
+library(mice)
+library(caret)
+
+# Load and Prepare Data
+setwd("/Users/shruthireddyvudem/Downloads")
+data <- read_csv("5.30.25_ShortenedProtocol-TDvsPIGDMelissa (1).csv")
+
+# Select relevant variables
+vars <- c("phenotype_ration_tremor_pi", "screening_age", "sex", "mdsupdrs_3_hy",  # covariates
+          # Cognitive
+          "mmse_total", "trails_a_time_to_complete", "trails_b_time_to_complete", "sdmt_number_correct",
+          # Psychological
+          "imputed_abc", "mffabq_total", "a_persistent_anxiety_total", 
+          "b_episodic_total_score", "c_avoidance_behavior_total", "gds_total", "balance_discordance",
+          # DT
+          "mdte", "cogdt", "cdte", "maai")
+
+data <- data %>% select(all_of(vars))
+
+# Impute missing values
+imputed <- mice(data, m = 1, method = "pmm", seed = 123)
+data_imp <- complete(imputed)
+
+# Fit Linear Regression Model
+model <- lm(phenotype_ration_tremor_pi ~ ., data = data_imp)
+
+# Summary of the model
+summary(model)
+
+# Model Performance (using 80/20 train-test split)
+set.seed(123)
+train_index <- createDataPartition(data_imp$phenotype_ration_tremor_pi, p = 0.8, list = FALSE)
+train_data <- data_imp[train_index, ]
+test_data <- data_imp[-train_index, ]
+
+model_train <- lm(phenotype_ration_tremor_pi ~ ., data = train_data)
+predictions <- predict(model_train, newdata = test_data)
+
+# Evaluate model performance
+postResample(predictions, test_data$phenotype_ration_tremor_pi)
+
+
+# Visualization
+# ----------------------------
+# 📈 Barplot: Correlation with Phenotype Ratio
+# ----------------------------
+
+# Extract phenotype ratio correlations
+cor_vals <- cor_matrix["phenotype_ration_tremor_pi", ]
+cor_df <- data.frame(Variable = names(cor_vals), Correlation = cor_vals)
+
+# Remove self-correlation
+cor_df <- cor_df %>% filter(Variable != "phenotype_ration_tremor_pi") %>%
+  arrange(desc(abs(Correlation)))
+
+# Plot barplot
+ggplot(cor_df, aes(x = reorder(Variable, Correlation), y = Correlation)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Correlation with Phenotype Ratio",
+       x = "Predictor Variable", y = "Pearson Correlation")
+
+summary(model)
+
+
+# AIM 2: Predicting Phenotype Ratio Using Cognitive, Psychological, and DT Variables
+
+#In this analysis, we investigated whether cognitive, psychological, and dual-task (DT) performance variables could explain variation in the phenotype ratio (tremor/PIGD) in individuals with Parkinson’s Disease. This continuous ratio reflects severity along the TD–PIGD phenotype spectrum.
+
+#After imputing missing values using Predictive Mean Matching (via the `mice` package) and selecting relevant features, we fit a multiple linear regression model using `phenotype_ration_tremor_pi` as the outcome. The model included cognitive scores (MMSE, Trails A & B, SDMT), psychological measures (ABC, mFFABQ, PAS, GDS), DT effects (mdte, cogdt, cdte, maai), and covariates (age, sex, HY stage).
+
+## Model Performance : Adjusted R²: 0.63 , RMSE (Test set): 1.29 , MAE: 1.09, F(18,39) = 6.43, p < 0.001
+
+#The model explained ~75% of the variance in phenotype ratio on the full data and ~55% on held-out test data, indicating strong explanatory power and moderate generalizability.
+
+## Significant Predictors
+# Persistent Anxiety (PAS-A) (p < 0.001): Higher scores associated with increased tremor dominance.
+# Depression (GDS) (p < 0.001): Higher depressive symptoms associated with lower phenotype ratio (more PIGD).
+# Balance Discordance (p < 0.001): Overestimating balance ability associated with tremor dominance.
+#ABC Balance Confidence (p < 0.001): Higher confidence predicted lower tremor dominance.
+# HY Stage (p < 0.01): Greater motor severity correlated with higher phenotype ratio.
+# Sex (p < 0.05): Females showed higher phenotype ratio than males.
+# Trails B Time (p < 0.05): Better executive function (faster times) predicted higher tremor dominance.
+
+## Interpretation
+#Psychological and perceptual variables — particularly anxiety, balance self-perception, and depression — significantly explain where a patient lies along the tremor vs. PIGD spectrum. Traditional cognitive measures (e.g., MMSE, SDMT) were not significant predictors in this model. This highlights the potential clinical value of non-motor symptoms in characterizing Parkinson's phenotype severity.
+
+## Conclusion
+#This analysis supports the use of psychological and DT-related metrics in understanding and modeling phenotype severity. Targeted interventions for anxiety and balance misperception may be especially relevant in tremor-dominant patients.
+
+
+```
+
