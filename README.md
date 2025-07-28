@@ -5,7 +5,7 @@ This machine learning project applies supervised learning to classify Parkinsonâ
 <p align="center">
   <img src="phenotype_modeling.jpg" width="600"/>
   <br>
-  <em>ðŸ§  Subtype classification and ratio prediction using psychological & sensorimotor indicators</em>
+  <em>  Subtype classification and ratio prediction using psychological & sensorimotor indicators</em>
 </p>
 
 ---
