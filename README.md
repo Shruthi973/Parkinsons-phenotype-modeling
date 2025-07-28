@@ -1,4 +1,4 @@
-# 🧠 Phenotype Modeling – Subtype Classification & Severity Regression in Parkinson’s Disease
+#  Phenotype Modeling – Subtype Classification & Severity Regression in Parkinson’s Disease
 
 This machine learning project applies supervised learning to classify Parkinson’s Disease patients into motor subtypes — **Tremor Dominant (TD)** vs. **Postural Instability and Gait Difficulty (PIGD)** — and to model a continuous **phenotype ratio score** that reflects motor severity progression. The pipeline integrates structured psychological, cognitive, and motor assessments with regression and classification models to support clinical phenotyping.
 
