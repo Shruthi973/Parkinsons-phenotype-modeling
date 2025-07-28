@@ -1,47 +1,85 @@
-# 🧠 Phenotype Modeling – Subtype Classification & Severity Prediction
+# 🧠 Phenotype Modeling – Subtype Classification & Severity Regression in Parkinson’s Disease
 
-This clinical machine learning project explores the classification of Parkinson's Disease patients into two motor subtypes—Tremor Dominant (TD) vs. Postural Instability and Gait Disorder (PIGD)—and models a continuous severity ratio using psychological, cognitive, and balance-related variables.
+This machine learning project applies supervised learning to classify Parkinson’s Disease patients into motor subtypes — **Tremor Dominant (TD)** vs. **Postural Instability and Gait Difficulty (PIGD)** — and to model a continuous **phenotype ratio score** that reflects motor severity progression. The pipeline integrates structured psychological, cognitive, and motor assessments with regression and classification models to support clinical phenotyping.
 
 <p align="center">
   <img src="phenotype_modeling.jpg" width="600"/>
   <br>
-  <em>🧠 Phenotype Modeling 
+  <em>🧠 Subtype classification and ratio prediction using psychological & sensorimotor indicators</em>
 </p>
 
+---
+
 ## 🧪 Dataset
-- Source: Real-world clinical study data (`DATA.csv`)
-- 144 features → motor scores, cognitive test results, balance confidence, fear of falling, mood assessments, dual-tasking performance
-- Target variables:
-  - `phenotype` (1 = TD, 2 = PIGD)
-  - `phenotype_ratio` (continuous: tremor/pigd dominance)
 
-## 🎯 Goals
-1. **Classify** phenotype groups using:
-   - Logistic Regression
-   - Naive Bayes
-   - Random Forest
+- **Source**: IRB-approved clinical dataset (`DATA.csv`)
+- **Observations**: Mild-to-moderate PD patients (n = 36)
+- **Features**: 144 variables including:
+  - Cognitive tests (TMT A/B, SDMT, MMSE)
+  - Mood scores (GDS, PAS)
+  - Balance metrics (ABC, mFFABQ, discordance)
+  - Motor scores (MDS-UPDRS, HY stage)
+- **Targets**:
+  - `phenotype`: Binary (TD = 1, PIGD = 2)
+  - `phenotype_ratio`: Continuous (TD:PIGD severity index)
 
-2. **Predict** phenotype ratio using:
-   - Linear Regression
-   - Feature scaling and imputation
+---
 
-## 🔧 Methods
-- Imputation: `IterativeImputer` (PMM-style)
-- Stratified Train-Test Split
-- Standardization with `StandardScaler`
-- Evaluation: Accuracy, Recall, Confusion Matrix, R², RMSE, MAE
+## 🎯 Objectives
 
-## 🧠 Results Summary
+1. **Classification Task**
+   - Identify TD vs. PIGD phenotype using:
+     - Logistic Regression  
+     - Gaussian Naive Bayes  
+     - Random Forest Classifier
 
-### ✅ Classification
-- **Logistic Regression Accuracy**: 75%
-- **Naive Bayes Balanced Accuracy**: 75%
-- **Random Forest**: High specificity but lower sensitivity to TD group
+2. **Regression Task**
+   - Predict phenotype ratio using:
+     - Linear Regression
+     - Feature selection + scaling
 
-### 📈 Regression
-- **Adjusted R²**: 0.555
-- **Key Predictors**: Anxiety, Depression, Balance Discordance, HY Stage
-- **RMSE**: 1.14, **MAE**: 0.91
+---
+
+## ⚙️ ML Methods
+
+- **Imputation**: IterativeImputer (scikit-learn)  
+- **Scaling**: StandardScaler  
+- **Validation**: Stratified Train-Test Split (75:25)  
+- **Metrics**: Accuracy, Recall, Balanced Accuracy, R², MAE, RMSE  
+- **Exploration**: Correlation heatmaps, bar plots, residual analysis
+
+---
+
+## 📈 Key Results
+
+### 🔹 Classification Performance:
+| Model | Accuracy | Notes |
+|-------|----------|-------|
+| Logistic Regression | **75%** | Balanced across both phenotypes |
+| Naive Bayes | 75% | Slight bias toward PIGD |
+| Random Forest | Moderate | High specificity for PIGD, lower TD sensitivity |
+
+### 🔹 Regression Performance:
+- **Adjusted R²**: 0.555  
+- **RMSE**: 1.14  
+- **MAE**: 0.91  
+- **Top Predictors**: Persistent Anxiety (PAS), Depression (GDS), TMT B, HY Stage
+
+---
 
 ## 📂 Files
-- `Phenotype_Modeling_Final.ipynb`: Full classification and regression workflow with plots and interpretations
+
+- `Phenotype_Modeling_Final.ipynb` – Full modeling workflow with preprocessing, training, and evaluation  
+- `DATA.csv` – Cleaned feature matrix with labeled targets  
+- `phenotype_modeling.jpg` – Visual overview of modeling strategy
+
+---
+
+## 🧠 Why It Matters
+
+Understanding how psychological and cognitive symptoms influence motor subtypes in PD could enable early, non-invasive screening and personalized interventions — especially for underserved or remote populations.
+
+---
+
+> This project bridges applied ML with human-centered health analytics — combining small-sample neurobehavioral data with interpretable model pipelines.
+
