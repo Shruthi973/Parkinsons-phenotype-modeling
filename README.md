@@ -2,6 +2,12 @@
 
 This clinical machine learning project explores the classification of Parkinson's Disease patients into two motor subtypes—Tremor Dominant (TD) vs. Postural Instability and Gait Disorder (PIGD)—and models a continuous severity ratio using psychological, cognitive, and balance-related variables.
 
+<p align="center">
+  <img src="phenotype_modeling.jpg" width="600"/>
+  <br>
+  <em>🧠 Phenotype Modeling 
+</p>
+
 ## 🧪 Dataset
 - Source: Real-world clinical study data (`DATA.csv`)
 - 144 features → motor scores, cognitive test results, balance confidence, fear of falling, mood assessments, dual-tasking performance
